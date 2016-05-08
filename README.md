@@ -38,3 +38,9 @@ ii. code.py
 This needs if the letters are mirrored. If the propeler is rotataing 
 other direction to the letters it will mirror the word. So this 
 code can rearrange the code to support the propeler.
+
+
+ii. charbank.ino
+
+The code that upload to arduino is this. The letters per round,
+the bliniking time can be adjust from here,

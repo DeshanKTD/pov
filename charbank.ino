@@ -1,9 +1,10 @@
 
 int led = 13;
-int sentenceLength=30;
-int delaytime = 416;
+int sentenceLength=40;//30
+int delaytime = 300;//416
 String mainString = "UNIVERSITY OF PERADENIYA";
 String playString="";
+boolean stringComplete = false;
 int wordLength;
 
 int bank[64][30]=
@@ -82,6 +83,7 @@ void setup() {
   DDRA = 0xff;
   DDRB = 0x0f;
   DDRC = 0xff;
+  setWord(); 
 }
 
 
@@ -135,11 +137,15 @@ void playLetter(char let){
 //play total word max with 14 character
 void playWord(){
    //check for serial available
-   checkSerial();
-    setWord(); 
+   if(stringComplete == true){
+     //checkSerial();
+      setWord(); 
+      stringComplete =false;
+      mainString="";
+   }
   
   for(int i=0;i<sentenceLength;i++){
-    playLetter(playString[sentenceLength-i]);
+    playLetter(playString[sentenceLength-1-i]);
   }
  
 //    for(int i=0;i<mainString.length();i++){
@@ -185,18 +191,36 @@ void setWord(){
   }
 }
 
+//
+//void checkSerial(){
+//   if(Serial.available()){
+//         mainString = Serial.readString();
+//         if(mainString == "yes"){
+//           digitalWrite(led,HIGH);
+//         }
+//         else if(mainString == "no"){
+//            digitalWrite(led,LOW); 
+//         }
+//   }
+//   
+//}
 
-void checkSerial(){
-   if(Serial.available()){
-         mainString = Serial.readString();
-         if(mainString == "yes"){
-           digitalWrite(led,HIGH);
-         }
-         else if(mainString == "no"){
-            digitalWrite(led,LOW); 
-         }
-   }
-   
+
+void serialEvent() {
+  while (Serial.available()) {
+    // get the new byte:
+    char inChar = (char)Serial.read(); 
+    // add it to the inputString:
+    if(inChar == '#'){
+       stringComplete = true;
+       break;
+    }
+    else{
+       mainString += inChar;
+    }
+    
+  }
+ 
 }
    
    

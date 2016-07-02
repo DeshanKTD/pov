@@ -1,13 +1,29 @@
 
+//test bullb
 int led = 13;
+
+//selecting mode for display time, text
+int mode = 0;
+
+//variables for time
+int hr = 0, mn = 0,sec=0;
+String timeString="";
+
+//maximum characters per round
 int sentenceLength=40;//30
+
+//delay between 2 stages
 int delaytime = 300;//416
+
+//serial read string
 String mainString = "UNIVERSITY OF PERADENIYA";
 String playString="";
 boolean stringComplete = false;
 int wordLength;
 
-int bank[64][30]=
+
+//character bank
+int bank[65][30]=
 {
 {0xfd,0xfd,0x0d,0x0d,0x0d,0x0d,0x0d,0x0d,0xfd,0xfd,0xff,0xff,0x00,0x00,0x00,0x00,0x00,0x00,0xff,0xff,0x0b,0x0b,0x0b,0x0b,0x0b,0x0b,0x0b,0x0b,0x0b,0x0b},
 {0x01,0x01,0x01,0x01,0xfd,0xfd,0x0d,0x09,0x09,0x01,0x00,0x00,0x00,0x00,0xff,0xff,0x00,0x00,0x00,0x00,0x08,0x08,0x0b,0x0b,0x0b,0x0b,0x0b,0x0b,0x08,0x08},
@@ -72,9 +88,12 @@ int bank[64][30]=
 {0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x02,0x06,0x0c,0x18,0x30,0x70,0xd8,0x8c,0x06,0x02,0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x09,0x0b,0x0a},
 {0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x02,0x06,0x0e,0x1e,0x36,0x66,0xc6,0x86,0x06,0x06,0x0b,0x0b,0x0b,0x0b,0x0b,0x0b,0x0b,0x0b,0x0b,0x0a},
 {0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x08,0x08,0x08,0x08,0x09,0x08,0x08,0x08,0x08,0x08},
-{0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x00,0x00,0x00,0xc0,0xc0,0xc0,0xc0,0x00,0x00,0x00,0x08,0x08,0x08,0x0b,0x0b,0x0b,0x0b,0x08,0x08,0x08}
+{0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x00,0x00,0x00,0xc0,0xc0,0xc0,0xc0,0x00,0x00,0x00,0x08,0x08,0x08,0x0b,0x0b,0x0b,0x0b,0x08,0x08,0x08},
+{0x1,0x1,0x1,0x1,0x61,0x61,0x1,0x1,0x1,0x1,0x0,0x0,0x0,0x0,0x60,0x60,0x0,0x0,0x0,0x0,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8}
 
 };
+
+
 
 void setup() {                
   // initialize the digital pin as an output.
@@ -94,6 +113,8 @@ void loop() {
 }
 
 
+
+// play a letter from character bank
 void playLetter(char let){
   char pos;
   int i;
@@ -107,13 +128,16 @@ void playLetter(char let){
     pos = let-65+10;
   }
   else if(let>96 && let<123){
-    pos = let-95+36;
+    pos = let-97+36;
   }
   else if(let==32){
     pos = 62;
   }
   else if(let==46){
     pos = 63;
+  }
+  else if(let==':'){
+    pos = 64;
   }
   
   
@@ -139,13 +163,57 @@ void playWord(){
    //check for serial available
    if(stringComplete == true){
      //checkSerial();
+     
+     //change to time mode
+     if(mainString.length()==8 && mainString[0]=='@' && mainString[1] == 't'){
+       setTime();
+       mode = 1;
+     }
+     
+     // change state delay
+     else if(mainString.length()==5 && mainString[0]=='@' && mainString[1] == 's'){
+       //set speed
+       setStateDelay();
+     }
+     
+     // reset state
+     else if(mainString == "@reset"){
+        mode=2; 
+     }
+     else{
+      mode = 0;
       setWord(); 
-      stringComplete =false;
-      mainString="";
+     }
+     mainString="";
+     stringComplete =false;
    }
   
-  for(int i=0;i<sentenceLength;i++){
-    playLetter(playString[sentenceLength-1-i]);
+  //play text
+  if(mode == 0){
+    for(int i=0;i<sentenceLength;i++){
+      playLetter(playString[sentenceLength-1-i]);
+    }
+  }
+  
+  //play time
+  else if(mode == 1){
+   
+    setTimeString();
+    for(int i=0;i<sentenceLength;i++){
+      playLetter(playString[sentenceLength-1-i]);
+    }
+  }
+  
+  //reset algo
+  else if(mode == 2){
+     PORTA = 0x00;
+     PORTC = 0x00;
+     PORTB = 0x00;
+     delayMicroseconds(delaytime);
+     PORTA = 0xFF;
+     PORTC = 0xFF;
+     PORTB = 0x0F;
+     delayMicroseconds(delaytime);
   }
  
 //    for(int i=0;i<mainString.length();i++){
@@ -154,6 +222,8 @@ void playWord(){
 }
 
 
+
+// fix word length with sentence length
 void setWord(){
   playString="";
   wordLength = mainString.length();
@@ -191,21 +261,90 @@ void setWord(){
   }
 }
 
-//
-//void checkSerial(){
-//   if(Serial.available()){
-//         mainString = Serial.readString();
-//         if(mainString == "yes"){
-//           digitalWrite(led,HIGH);
-//         }
-//         else if(mainString == "no"){
-//            digitalWrite(led,LOW); 
-//         }
-//   }
-//   
-//}
+
+// initializing timing setup
+void setTime(){
+    String hour = mainString.substring(2,4);
+    String mins = mainString.substring(4,6);
+    String sc = mainString.substring(6);
+    
+    hr = hour.toInt();
+    mn = mins.toInt();
+    sec = sc.toInt();
+
+  timeString = String(hr)+":";
+  timeString = timeString + String(mn);
+}
+
+// set stage time
+void setStateDelay(){
+    String spd = mainString.substring(2);
+    delaytime = spd.toInt();
+}
 
 
+// time calc process in 24h
+void calcTime(){
+  sec++;
+  if(sec>59){
+     mn++;
+     sec= 0;
+     if(mn>59){
+       hr ++;
+       mn = 0;
+       if(hr>23){
+         hr = 0;
+       }
+     } 
+  }
+  delay(999);
+  timeString = String(hr)+":";
+  timeString = timeString + String(mn);
+}
+
+
+// make time string to display
+void setTimeString(){
+  playString="";
+  wordLength = 5;
+  if(wordLength>=sentenceLength-1)
+    return;
+    
+  else if(wordLength==0)
+    return;
+    
+  else if(wordLength==sentenceLength-2){
+    playString="."+timeString;
+    playString=playString + ".";
+    return;
+  }
+  else{
+    int remain = sentenceLength-wordLength;
+    if(remain%2){
+      for(int i=0;i<(remain/2+1);i++){
+        playString=playString+".";
+      }
+      playString=playString+timeString;
+      for(int i=0;i<remain/2;i++){
+        playString=playString+".";
+      }
+    }
+    else{
+      for(int i=0;i<(remain/2);i++){
+        playString=playString+".";
+      }
+      playString=playString+timeString;
+      for(int i=0;i<remain/2;i++){
+        playString=playString+".";
+      }
+    }
+  }
+}
+
+
+
+
+//read serial data
 void serialEvent() {
   while (Serial.available()) {
     // get the new byte:
